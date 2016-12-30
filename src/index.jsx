@@ -89,7 +89,7 @@ const Home = React.createClass({
                 </div>
                 <div className="form-group">
                     <label htmlFor="code">Player name</label>
-                    <input type="text" className="form-control" id="code" placeholder="Game code" onChange={ev => this.onChange('name', ev.target.value)} />
+                    <input type="text" className="form-control" id="code" placeholder="Player name" onChange={ev => this.onChange('name', ev.target.value)} />
                 </div>
                 <button type="submit" onClick={this.join} className="btn btn-default">Join</button>
                 <button type="submit" onClick={this.newGame} className="btn btn-default">Add new game</button>
