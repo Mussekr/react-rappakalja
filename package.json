@@ -1,0 +1,45 @@
+{
+  "name": "react-redux-test",
+  "version": "1.0.0",
+  "description": "test redux app",
+  "main": "index.js",
+  "scripts": {
+    "start": "npm run dev-server",
+    "watch": "webpack -w",
+    "dev-server": "nodemon server/server.js",
+    "prod": "NODE_ENV=production node server/server.js",
+    "postinstall": "webpack -p",
+    "lint": "eslint src/**/*.jsx src/**/*.js server/**/*.js webpack.config.js"
+  },
+  "keywords": [
+    "redux",
+    "react"
+  ],
+  "author": "Rasmus Kröger",
+  "license": "ISC",
+  "dependencies": {
+      "babel-core": "^6.2.1",
+      "babel-loader": "^6.2.0",
+      "babel-preset-es2015": "^6.1.18",
+      "babel-preset-react": "^6.1.18",
+      "css-loader": "^0.23.1",
+      "eslint": "^3.3.0",
+      "eslint-loader": "^1.5.0",
+      "eslint-plugin-react": "^6.0.0",
+      "express": "^4.13.3",
+      "extract-text-webpack-plugin": "^1.0.1",
+      "immutable": "^3.8.1",
+      "node-sass": "^3.8.0",
+      "react": "^15.3.0",
+      "react-dom": "^15.3.0",
+      "react-redux": "^4.4.5",
+      "redux": "^3.6.0",
+      "sass-loader": "^4.0.0",
+      "style-loader": "^0.13.1",
+      "webpack": "^1.12.9",
+      "whatwg-fetch": "^1.0.0"
+  },
+  "devDependencies": {
+    "nodemon": "^1.10.0"
+  }
+}
