@@ -12,11 +12,6 @@ const db = pgp(configPgp);
 
 const app = express();
 
-const secret = process.env.NODE_ENV === 'production' ? process.env.APP_SECRET : 'dev-secret';
-if (!secret) {
-    throw new Error('Unable to start in production mode with no APP_SECRET set!');
-}
-
 app.use(cookieSession({
     name: 'session',
     keys: ['key1', 'key2']
