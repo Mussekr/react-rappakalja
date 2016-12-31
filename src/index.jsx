@@ -72,7 +72,11 @@ const Home = React.createClass({
     checkIfGameExist: function() {
         api.json('/api/session').then(json => {
             if(!isEmpty(json)) {
-                browserHistory.push('/answer');
+                if(json.master === true) {
+                    browserHistory.push('/game');
+                } else {
+                    browserHistory.push('/answer');
+                }
             }
         });
     },
