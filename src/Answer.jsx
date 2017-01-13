@@ -49,7 +49,9 @@ const Answer = React.createClass({
         }
     },
     logout: function() {
-        api.post('/api/session/del').then(() => browserHistory.push('/'));
+        if(confirm('Are you sure?')) {
+            api.post('/api/session/del').then(() => browserHistory.push('/'));
+        }
     },
     render: function() {
         if(String(this.state.answered) === this.state.servercurrentround) {
