@@ -64,11 +64,14 @@ app.post('/api/join', function(req, res) {
     db.oneOrNone('SELECT count(code) FROM games WHERE code = $1', [req.body.gameId])
     .then(data => {
         if(data.count === String(1)) {
-            req.session.gameId = req.body.gameId;
-            req.session.author = req.body.author;
-            req.session.currentRound = 1;
-            req.session.answered = 0;
-            res.send({success: true});
+            db.one('SELECT currentround FROM games WHERE code = $1', [req.body.gameId])
+            .then(data => {
+                req.session.gameId = req.body.gameId;
+                req.session.author = req.body.author;
+                req.session.currentRound = data.currentround;
+                req.session.answered = data.currentround - 1;
+                res.send({success: true});
+            });
         } else {
             res.status(400).send({success: false, error: 'Game not found!'});
         }
