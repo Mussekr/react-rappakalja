@@ -8,7 +8,7 @@
     "watch": "webpack -w",
     "dev-server": "nodemon server/server.js",
     "prod": "NODE_ENV=production node server/server.js",
-    "postinstall": "NODE_ENV=production webpack -p",
+    "postinstall": "NODE_ENV=production webpack -p && yarn run prod-migrate",
     "lint": "eslint src/**/*.jsx src/**/*.js server/**/*.js webpack.config.js",
     "prod-migrate": "npm run migrate -- up -e prod",
     "migrate": "db-migrate"

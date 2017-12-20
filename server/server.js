@@ -53,7 +53,7 @@ app.post('/api/newgame', function(req, res) {
     if(req.session.gameId) {
         res.status(400).send({success: false, error: 'Cannot create new game, already one open'});
     } else {
-        db.none('INSERT INTO games (code, currentround) VALUES ($1, $2)', [code, 1])
+        db.none('INSERT INTO games (code, currentround, active) VALUES ($1, $2, TRUE)', [code, 1])
         .then(() => {
             req.session.gameId = code;
             req.session.currentRound = 1;
@@ -79,7 +79,7 @@ app.post('/api/answer', function(req, res) {
 });
 
 app.post('/api/join', function(req, res) {
-    db.oneOrNone('SELECT count(code) FROM games WHERE code = $1', [req.body.gameId])
+    db.oneOrNone('SELECT count(code) FROM games WHERE code = $1 AND active = TRUE', [req.body.gameId])
     .then(data => {
         if(data.count === String(1)) {
             db.one('SELECT currentround FROM games WHERE code = $1', [req.body.gameId])
@@ -107,7 +107,7 @@ app.get('/api/answers/:round', function(req, res) {
 });
 
 app.post('/api/nextround', function(req, res) {
-    if(req.session.master === true) {
+    if(req.session.master) {
         db.none('UPDATE games SET currentround = currentround + 1 WHERE code = $1', [req.session.gameId])
         .then(() => res.send({success: true}))
         .catch(err => res.status(500).send(err));
@@ -117,13 +117,24 @@ app.post('/api/nextround', function(req, res) {
 });
 
 app.get('/api/session', function(req, res) {
-    db.oneOrNone('SELECT currentround as serverCurrentRound FROM games WHERE code = $1', [req.session.gameId]).then(data => {
-        res.send(Object.assign(req.session, data));
-    }).catch(err => res.status(500).send(err));
+    if(!req.session.gameId) {
+        res.send({});
+        return;
+    }
+    db.oneOrNone('SELECT currentround as serverCurrentRound, active FROM games WHERE code = $1', [req.session.gameId]).then(data => {
+        if(!data.active) {
+            req.session = null;
+        }
+        return res.send(Object.assign(data, req.session));
+    }).catch(err => res.status(500).send({success: false, err: err}));
 });
 app.post('/api/session/del', function(req, res) {
-    req.session = null;
-    res.send({success: true});
+    if(req.session.master) {
+        db.none('UPDATE games SET active = FALSE WHERE code = $1', [req.session.gameId]).then(() => {
+            req.session = null;
+            res.send({success: true});
+        }).catch(err => res.status(500).send(err));
+    }
 });
 
 app.get('/api/*', function(req, res) {

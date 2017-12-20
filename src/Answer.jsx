@@ -1,7 +1,6 @@
 import React, { Component } from 'react';
 import api from './utils/api';
 import { browserHistory } from 'react-router';
-import _ from 'lodash';
 
 class Answer extends Component {
     constructor(props) {
@@ -20,7 +19,7 @@ class Answer extends Component {
     }
     getSession = () => {
         api.json('/api/session').then(json => {
-            if(_.isEmpty(json)) {
+            if(!json.active) {
                 browserHistory.push('/');
             } else if (json.master) {
                 browserHistory.push('/game');
