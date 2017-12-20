@@ -31,10 +31,7 @@ if (env === 'production') {
 
 app.use(cookieSession({
     secret: secret,
-    resave: false,
-    saveUninitialized: false,
-    httpOnly: true,
-    secure: env === 'production'
+    name: 'session'
 
 }));
 app.use(bodyParser.json());
