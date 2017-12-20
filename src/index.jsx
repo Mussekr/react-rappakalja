@@ -1,18 +1,16 @@
 import './style.scss';
-import React from 'react';
+import React, { Component } from 'react';
 import ReactDOM from 'react-dom';
 import Answer from './Answer';
 import Game from './Game';
 import { Router, Route, browserHistory, IndexRoute } from 'react-router';
+import PropTypes from 'prop-types';
+import _ from 'lodash';
 import api from './utils/api';
-import isEmpty from './utils/isEmpty';
 import 'whatwg-fetch';
 
-const Index = React.createClass({
-    propTypes: {
-        children: React.PropTypes.element.isRequired
-    },
-    render: function() {
+class Index extends Component {
+    render() {
         return (
             <div className="container-fluid">
                 <div className="row">
@@ -33,22 +31,27 @@ const Index = React.createClass({
 
         );
     }
-});
+}
 
-const Home = React.createClass({
-    getInitialState: function() {
-        return {
+Index.propTypes = {
+    children: PropTypes.element.isRequired
+};
+
+class Home extends Component {
+    constructor(props) {
+        super(props);
+        this.state = {
             code: '',
             author: '',
             error: {}
         };
-    },
-    onChange: function(field, value) {
+    }
+    onChange = (field, value) => {
         this.setState({
             [field]: value
         });
-    },
-    join: function() {
+    };
+    join = () => {
         const data = {
             gameId: this.state.code,
             author: this.state.name
@@ -56,22 +59,22 @@ const Home = React.createClass({
         api.post('/api/join', data).then(() => {
             browserHistory.push('/answer');
         }).catch(err => this.setState({error: err}));
-    },
-    showError: function() {
+    };
+    showError = () => {
         if(this.state.error.success === false) {
             return this.state.error.error;
         } else {
             return null;
         }
-    },
-    newGame: function() {
+    }
+    newGame = () => {
         api.post('/api/newgame').then(() => {
             browserHistory.push('/game');
         }).catch(err => this.setState({error: err}));
-    },
-    checkIfGameExist: function() {
+    }
+    checkIfGameExist() {
         api.json('/api/session').then(json => {
-            if(!isEmpty(json)) {
+            if(!_.isEmpty(json)) {
                 if(json.master === true) {
                     browserHistory.push('/game');
                 } else {
@@ -79,11 +82,11 @@ const Home = React.createClass({
                 }
             }
         });
-    },
-    componentDidMount: function() {
+    }
+    componentDidMount() {
         this.checkIfGameExist();
-    },
-    render: function() {
+    }
+    render() {
         return (
             <div>
                 <div className="red">{this.showError()}</div>
@@ -100,7 +103,7 @@ const Home = React.createClass({
             </div>
         );
     }
-});
+}
 
 ReactDOM.render(
     <Router history={browserHistory}>

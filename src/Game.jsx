@@ -1,19 +1,21 @@
-import React from 'react';
+import React, { Component } from 'react';
 import api from './utils/api';
-import isEmpty from './utils/isEmpty';
 import { browserHistory } from 'react-router';
+import PropTypes from 'prop-types';
+import _ from 'lodash';
 
-const Game = React.createClass({
-    getInitialState: function() {
-        return {
+class Game extends Component {
+    constructor(props) {
+        super(props);
+        this.state = {
             gameId: '',
             servercurrentround: '',
             answers: []
         };
-    },
-    getSession: function() {
+    }
+    getSession = () => {
         api.json('/api/session').then(json => {
-            if(isEmpty(json)) {
+            if(_.isEmpty(json)) {
                 browserHistory.push('/');
             } else if(json.master === false) {
                 browserHistory.push('/');
@@ -21,34 +23,41 @@ const Game = React.createClass({
                 this.setState(json);
             }
         });
-    },
-    getAnswers: function() {
+    };
+    getAnswers = () => {
+        if(!this.state.servercurrentround) {
+            return;
+        }
         api.json('/api/answers/' + this.state.servercurrentround).then(json => this.setState({answers: json}));
-    },
-    componentDidMount: function() {
+    };
+    componentDidMount() {
         this.getSession();
         this.getAnswers();
         this.loadInterval = setInterval(this.getAnswers, 3000);
-    },
-    componentWillUnmount: function() {
+    }
+    componentWillUnmount() {
         clearInterval(this.loadInterval);
-    },
-    nextRound: function() {
+    }
+    nextRound = () => {
         if(confirm('Are you sure?')) {
             api.post('/api/nextround').then(() => this.getSession());
         }
-    },
-    endGame: function() {
+    };
+    endGame() {
         if(confirm('Are you sure?')) {
             api.post('/api/session/del').then(() => browserHistory.push('/'));
         }
-    },
-    render: function() {
+    }
+    shuffleAnswers = () => {
+        this.setState({answers: _.shuffle(this.state.answers)});
+    };
+    render() {
         const data = this.state.answers.map(answer => <AnswerBlock player={answer.author} answer={answer.answer} key={answer.id} />);
         return (
             <div>
                 <h3>Room code: {this.state.gameId}</h3>
                 <h3>Current round: {this.state.servercurrentround}</h3>
+                <button onClick={this.shuffleAnswers} className="btn btn-default">Shuffle answers</button>
                 <button type="submit" onClick={this.nextRound} className="btn btn-default">Next round</button>
                 <button type="submit" onClick={this.endGame} className="btn btn-default">End game</button>
                 <hr />
@@ -56,14 +65,10 @@ const Game = React.createClass({
             </div>
         );
     }
-});
+}
 
-const AnswerBlock = React.createClass({
-    propTypes: {
-        player: React.PropTypes.string.isRequired,
-        answer: React.PropTypes.string.isRequired
-    },
-    render: function() {
+class AnswerBlock extends Component {
+    render() {
         return (
             <div>
                 <p className="lead">{this.props.player}</p>
@@ -72,6 +77,11 @@ const AnswerBlock = React.createClass({
             </div>
         );
     }
-});
+}
 
-module.exports = Game;
+AnswerBlock.propTypes = {
+    player: PropTypes.string.isRequired,
+    answer: PropTypes.string.isRequired
+};
+
+export default Game;

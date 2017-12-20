@@ -12,9 +12,30 @@ const db = pgp(configPgp);
 
 const app = express();
 
+const env = process.env.NODE_ENV || 'development';
+const secret = process.env.NODE_ENV === 'production' ? process.env.APP_SECRET : 'dev-secret';
+if (!secret) {
+    throw new Error('Unable to start in production mode with no APP_SECRET set!');
+}
+
+const forceSsl = function (req, res, next) {
+    if (req.headers['x-forwarded-proto'] !== 'https') {
+        return res.redirect(['https://', req.get('Host'), req.url].join(''));
+    }
+    return next();
+};
+
+if (env === 'production') {
+    app.use(forceSsl);
+}
+
 app.use(cookieSession({
-    name: 'session',
-    keys: ['key1', 'key2']
+    secret: secret,
+    resave: false,
+    saveUninitialized: false,
+    httpOnly: true,
+    secureProxy: env === 'production'
+
 }));
 app.use(bodyParser.json());
 app.use(express.static(__dirname + '/../public/'));
@@ -101,7 +122,6 @@ app.post('/api/nextround', function(req, res) {
 app.get('/api/session', function(req, res) {
     db.oneOrNone('SELECT currentround as serverCurrentRound FROM games WHERE code = $1', [req.session.gameId]).then(data => {
         res.send(Object.assign(req.session, data));
-        console.log(data);
     }).catch(err => res.status(500).send(err));
 });
 app.post('/api/session/del', function(req, res) {

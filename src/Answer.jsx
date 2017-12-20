@@ -1,36 +1,45 @@
-import React from 'react';
+import React, { Component } from 'react';
 import api from './utils/api';
-import isEmpty from './utils/isEmpty';
 import { browserHistory } from 'react-router';
+import _ from 'lodash';
 
-const Answer = React.createClass({
-    getInitialState: function() {
-        return {
+class Answer extends Component {
+    constructor(props) {
+        super(props);
+        this.state = {
             answered: 0,
             currentRound: 0,
             answer: ''
         };
-    },
-    getSession: function() {
+        this.getSession = this.getSession.bind(this);
+        this.componentDidMount = this.componentDidMount.bind(this);
+        this.componentWillUnmount = this.componentWillUnmount.bind(this);
+        this.onChange = this.onChange.bind(this);
+        this.sendAnswer = this.sendAnswer.bind(this);
+        this.getError = this.getError.bind(this);
+    }
+    getSession = () => {
         api.json('/api/session').then(json => {
-            if(isEmpty(json)) {
+            if(_.isEmpty(json)) {
                 browserHistory.push('/');
+            } else if (json.master) {
+                browserHistory.push('/game');
             } else {
                 this.setState(json);
             }
         });
-    },
-    componentDidMount: function() {
+    }
+    componentDidMount() {
         this.getSession();
         this.loadInterval = setInterval(this.getSession, 5000);
-    },
-    componentWillUnmount: function() {
+    }
+    componentWillUnmount() {
         clearInterval(this.loadInterval);
-    },
-    onChange: function(ev) {
+    }
+    onChange = ev => {
         this.setState({answer: ev.target.value});
-    },
-    sendAnswer: function() {
+    }
+    sendAnswer = () => {
         if(this.state.answer) {
             const data = {
                 currentRound: this.state.servercurrentround,
@@ -40,20 +49,20 @@ const Answer = React.createClass({
         } else {
             this.setState({error: true});
         }
-    },
-    getError: function() {
+    }
+    getError = () => {
         if(this.state.error) {
             return 'The answer is empty! Fill!';
         } else {
             return null;
         }
-    },
-    logout: function() {
+    }
+    logout() {
         if(confirm('Are you sure?')) {
             api.post('/api/session/del').then(() => browserHistory.push('/'));
         }
-    },
-    render: function() {
+    }
+    render() {
         if(String(this.state.answered) === this.state.servercurrentround) {
             return (
                 <div><h3>Wait for next round!</h3> <button type="submit" onClick={this.logout} className="btn btn-default">Leave game</button></div>
@@ -77,6 +86,6 @@ const Answer = React.createClass({
             );
         }
     }
-});
+}
 
-module.exports = Answer;
+export default Answer;

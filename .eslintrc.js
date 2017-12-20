@@ -5,6 +5,7 @@ module.exports = {
         "es6": true
     },
     "extends": ["eslint:recommended", "plugin:react/recommended"],
+    "parser": "babel-eslint",
     "parserOptions": {
         "ecmaFeatures": {
             "experimentalObjectRestSpread": true,
@@ -16,6 +17,7 @@ module.exports = {
         "react"
     ],
     "rules": {
+        "no-invalid-this": "off",
         "accessor-pairs": "error",
         "array-bracket-spacing": [
             "error",
@@ -83,7 +85,7 @@ module.exports = {
         "guard-for-in": "error",
         "handle-callback-err": "error",
         "id-blacklist": "error",
-        "id-length": "error",
+        "id-length": "off",
         "id-match": "error",
         "indent": ["error", 4],
         "init-declarations": "error",
