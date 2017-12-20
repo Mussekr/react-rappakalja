@@ -34,7 +34,7 @@ app.use(cookieSession({
     resave: false,
     saveUninitialized: false,
     httpOnly: true,
-    secureProxy: env === 'production'
+    secure: env === 'production'
 
 }));
 app.use(bodyParser.json());
