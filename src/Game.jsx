@@ -40,7 +40,10 @@ class Game extends Component {
     }
     nextRound = () => {
         if(confirm('Are you sure?')) {
-            api.post('/api/nextround').then(() => this.getSession());
+            api.post('/api/nextround').then(() => {
+                this.getSession();
+                this.setState({answers: []});
+            });
         }
     };
     endGame() {
