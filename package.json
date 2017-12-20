@@ -19,6 +19,9 @@
   ],
   "author": "Rasmus Kröger",
   "license": "MIT",
+  "engines": {
+      "node": "8.4.0"
+  },
   "dependencies": {
     "babel-core": "^6.26.0",
     "babel-eslint": "^8.0.3",
