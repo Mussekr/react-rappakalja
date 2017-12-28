@@ -41,6 +41,7 @@
     "extract-text-webpack-plugin": "^3.0.2",
     "lodash": "^4.17.4",
     "node-sass": "^3.8.0",
+    "pg-native": "^2.2.0",
     "pg-promise": "^5.5.0",
     "prop-types": "^15.5.7",
     "randomatic": "^1.1.6",

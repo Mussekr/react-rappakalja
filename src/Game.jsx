@@ -28,7 +28,11 @@ class Game extends Component {
         if(!this.state.servercurrentround) {
             return;
         }
-        api.json('/api/answers/' + this.state.servercurrentround).then(json => this.setState({answers: json}));
+        api.json('/api/answers/' + this.state.servercurrentround).then(json => {
+            if(json.length !== this.state.answers.length) {
+                this.setState({answers: json});
+            }
+        });
     };
     componentDidMount() {
         this.getSession();

@@ -896,6 +896,10 @@ binary-extensions@^1.0.0:
   version "1.11.0"
   resolved "https://registry.yarnpkg.com/binary-extensions/-/binary-extensions-1.11.0.tgz#46aa1751fb6a2f93ee5e689bb1087d4b14c6c205"
 
+bindings@1.2.1:
+  version "1.2.1"
+  resolved "https://registry.yarnpkg.com/bindings/-/bindings-1.2.1.tgz#14ad6113812d2d37d72e67b4cacb4bb726505f11"
+
 block-stream@*:
   version "0.0.9"
   resolved "https://registry.yarnpkg.com/block-stream/-/block-stream-0.0.9.tgz#13ebfe778a03205cfe03751481ebb4b3300c126a"
@@ -2894,6 +2898,10 @@ is-utf8@^0.2.0:
   version "0.2.1"
   resolved "https://registry.yarnpkg.com/is-utf8/-/is-utf8-0.2.1.tgz#4b0da1442104d1b336340e80797e865cf39f7d72"
 
+isarray@0.0.1:
+  version "0.0.1"
+  resolved "https://registry.yarnpkg.com/isarray/-/isarray-0.0.1.tgz#8a18acfca9a8f4177e09abfc6038939b05d1eedf"
+
 isarray@1.0.0, isarray@^1.0.0, isarray@~1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/isarray/-/isarray-1.0.0.tgz#bb935d48582cba168c06834957a54a3e07124f11"
@@ -3046,6 +3054,13 @@ levn@^0.3.0, levn@~0.3.0:
   dependencies:
     prelude-ls "~1.1.2"
     type-check "~0.3.2"
+
+libpq@^1.7.0:
+  version "1.8.7"
+  resolved "https://registry.yarnpkg.com/libpq/-/libpq-1.8.7.tgz#c2deb121e28f7f84bd3b2451afff68b6663e74f9"
+  dependencies:
+    bindings "1.2.1"
+    nan "^2.3.0"
 
 load-json-file@^1.0.0:
   version "1.1.0"
@@ -3871,6 +3886,14 @@ pg-minify@0.4:
   version "0.4.5"
   resolved "https://registry.yarnpkg.com/pg-minify/-/pg-minify-0.4.5.tgz#d3e92fb690f9283b8a37866e4566fce9fed26150"
 
+pg-native@^2.2.0:
+  version "2.2.0"
+  resolved "https://registry.yarnpkg.com/pg-native/-/pg-native-2.2.0.tgz#bc84756f4ecbf600ff7cb48ea5854141830cf1e4"
+  dependencies:
+    libpq "^1.7.0"
+    pg-types "^1.12.1"
+    readable-stream "1.0.31"
+
 pg-pool@1.*:
   version "1.8.0"
   resolved "https://registry.yarnpkg.com/pg-pool/-/pg-pool-1.8.0.tgz#f7ec73824c37a03f076f51bfdf70e340147c4f37"
@@ -3887,7 +3910,7 @@ pg-promise@^5.5.0:
     pg-minify "0.4"
     spex "1.2"
 
-pg-types@1.*:
+pg-types@1.*, pg-types@^1.12.1:
   version "1.13.0"
   resolved "https://registry.yarnpkg.com/pg-types/-/pg-types-1.13.0.tgz#75f490b8a8abf75f1386ef5ec4455ecf6b345c63"
   dependencies:
@@ -4499,6 +4522,15 @@ read@1.0.x:
   dependencies:
     mute-stream "~0.0.4"
 
+readable-stream@1.0.31:
+  version "1.0.31"
+  resolved "https://registry.yarnpkg.com/readable-stream/-/readable-stream-1.0.31.tgz#8f2502e0bc9e3b0da1b94520aabb4e2603ecafae"
+  dependencies:
+    core-util-is "~1.0.0"
+    inherits "~2.0.1"
+    isarray "0.0.1"
+    string_decoder "~0.10.x"
+
 readable-stream@^2.0.1, readable-stream@^2.0.2, readable-stream@^2.0.6, readable-stream@^2.1.4, readable-stream@^2.2.2, readable-stream@^2.2.6, readable-stream@^2.3.3:
   version "2.3.3"
   resolved "https://registry.yarnpkg.com/readable-stream/-/readable-stream-2.3.3.tgz#368f2512d79f9d46fdfc71349ae7878bbc1eb95c"
@@ -5072,6 +5104,10 @@ string_decoder@^1.0.0, string_decoder@~1.0.3:
   resolved "https://registry.yarnpkg.com/string_decoder/-/string_decoder-1.0.3.tgz#0fc67d7c141825de94282dd536bec6b9bce860ab"
   dependencies:
     safe-buffer "~5.1.0"
+
+string_decoder@~0.10.x:
+  version "0.10.31"
+  resolved "https://registry.yarnpkg.com/string_decoder/-/string_decoder-0.10.31.tgz#62e203bc41766c6c28c9fc84301dab1c5310fa94"
 
 stringstream@~0.0.4, stringstream@~0.0.5:
   version "0.0.5"
