@@ -20,15 +20,16 @@ class Game extends Component {
             } else if(json.master === false) {
                 browserHistory.push('/');
             } else {
+                this.getAnswers(json.servercurrentround);
                 this.setState(json);
             }
         });
     };
-    getAnswers = () => {
-        if(!this.state.servercurrentround) {
+    getAnswers = round => {
+        if(!round) {
             return;
         }
-        api.json('/api/answers/' + this.state.servercurrentround).then(json => {
+        api.json('/api/answers/' + round).then(json => {
             if(json.length !== this.state.answers.length) {
                 this.setState({answers: json});
             }
@@ -36,8 +37,7 @@ class Game extends Component {
     };
     componentDidMount() {
         this.getSession();
-        this.getAnswers();
-        this.loadInterval = setInterval(this.getAnswers, 3000);
+        this.loadInterval = setInterval(() => this.getAnswers(this.state.serverservercurrentround), 3000);
     }
     componentWillUnmount() {
         clearInterval(this.loadInterval);
