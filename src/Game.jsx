@@ -37,7 +37,7 @@ class Game extends Component {
     };
     componentDidMount() {
         this.getSession();
-        this.loadInterval = setInterval(() => this.getAnswers(this.state.serverservercurrentround), 3000);
+        this.loadInterval = setInterval(() => this.getAnswers(this.state.servercurrentround), 3000);
     }
     componentWillUnmount() {
         clearInterval(this.loadInterval);
