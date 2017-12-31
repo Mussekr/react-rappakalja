@@ -135,6 +135,7 @@ app.post('/api/session/del', function(req, res) {
             res.send({success: true});
         }).catch(err => res.status(500).send(err));
     } else {
+        res.send({success: true});
         req.session = null;
     }
 });
