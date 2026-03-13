@@ -1,18 +1,22 @@
 {
-  "dev": {
-    "driver": "pg",
-    "host": "localhost",
-    "user": {"ENV": "PGUSER"},
-    "password": {"ENV": "PGPASSWORD"},
-    "database": {"ENV": "PGDATABASE"}
-  },
+    "dev": {
+        "driver": "pg",
+        "host": "localhost",
+        "user": {"ENV": "PGUSER"},
+        "password": {"ENV": "PGPASSWORD"},
+        "database": {"ENV": "PGDATABASE"}
+    },
 
-  "prod": {
-    "driver": "pg",
-    "host": {"ENV": "PGHOST"},
-    "user": {"ENV": "PGUSER"},
-    "password": {"ENV": "PGPASSWORD"},
-    "database": {"ENV": "PGDATABASE"},
-    "native": true
-  }
+    "prod": {
+        "driver": "pg",
+        "host": {"ENV": "PGHOST"},
+        "user": {"ENV": "PGUSER"},
+        "password": {"ENV": "PGPASSWORD"},
+        "database": {"ENV": "PGDATABASE"}
+    },
+
+    "fly": {
+        "driver": "pg",
+        "connectionString": {"ENV": "DATABASE_URL"}
+    }
 }

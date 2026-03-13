@@ -2,35 +2,33 @@ const defaultOpts = {
     credentials: 'same-origin'
 };
 
-const request = (url, opts, ...rest) => fetch(url, Object.assign({}, defaultOpts, opts), ...rest)
+const request = (url, opts) => fetch(url, { ...defaultOpts, ...opts })
     .then(resp => resp.status < 400 ? resp : Promise.reject(resp));
 
-const json = (...args) => request(...args)
+const json = (url, opts) => request(url, opts)
     .then(resp => resp.text())
     .then(text => {
         try {
             return JSON.parse(text);
-        } catch(err) {
+        } catch (err) {
             return Promise.reject(new Error(`Trying to parse an invalid JSON object: ${text}`));
         }
     })
     .catch(err => typeof err.json === 'function' ? err.json().then(val => Promise.reject(val)) : err);
 
-const post = (url, body, opts = {}, ...rest) =>
-    json(url, Object.assign({}, opts, {
+const post = (url, body, opts = {}) =>
+    json(url, {
+        ...opts,
         method: 'POST',
         body: JSON.stringify(body),
-        headers: Object.assign({
-            'Content-Type': 'application/json'
-        }, opts.headers)
-    }), ...rest);
+        headers: {
+            'Content-Type': 'application/json',
+            ...opts.headers
+        }
+    });
 
-const del = (url, opts = {}, ...rest) =>
-    json(url, Object.assign({}, opts, {method: 'DELETE'}), ...rest);
-
-module.exports = {
+export default {
     request,
     json,
-    post,
-    del
+    post
 };

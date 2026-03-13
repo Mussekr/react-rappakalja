@@ -1,0 +1,32 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+    environment:
+      - PGHOST=postgres
+      - PGPORT=5432
+      - PGUSER=postgres
+      - PGPASSWORD=postgres
+      - PGDATABASE=rappakalja
+      - APP_SECRET=supersecretkey
+      - PORT=8080
+      - NODE_ENV=production
+
+  postgres:
+    image: postgres:16-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=rappakalja
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:
