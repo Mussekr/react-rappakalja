@@ -1,60 +1,60 @@
 {
-  "name": "react-redux-test",
-  "version": "1.0.0",
-  "description": "test redux app",
-  "main": "index.js",
-  "scripts": {
-    "start": "npm run dev-server",
-    "watch": "webpack -w",
-    "dev-server": "nodemon server/server.js",
-    "prod": "NODE_ENV=production node server/server.js",
-    "postinstall": "NODE_ENV=production webpack -p && yarn run prod-migrate",
-    "lint": "eslint src/**/*.jsx src/**/*.js server/**/*.js webpack.config.js",
-    "prod-migrate": "npm run migrate -- up -e prod",
-    "migrate": "db-migrate"
-  },
-  "keywords": [
-    "redux",
-    "react"
-  ],
-  "author": "Rasmus Kröger",
-  "license": "MIT",
-  "engines": {
-    "node": "8.4.0"
-  },
-  "dependencies": {
-    "babel-core": "^6.26.0",
-    "babel-eslint": "^8.0.3",
-    "babel-loader": "^7.1.2",
-    "babel-plugin-transform-class-properties": "^6.24.1",
-    "babel-preset-env": "^1.6.1",
-    "babel-preset-react": "^6.24.1",
-    "body-parser": "^1.15.2",
-    "cookie-session": "^2.0.0-alpha.2",
-    "css-loader": "^0.23.1",
-    "db-migrate": "^0.10.0-beta.20",
-    "db-migrate-pg": "^0.1.11",
-    "eslint": "^3.3.0",
-    "eslint-loader": "^1.5.0",
-    "eslint-plugin-react": "^6.0.0",
-    "express": "^4.13.3",
-    "extract-text-webpack-plugin": "^3.0.2",
-    "lodash": "^4.17.4",
-    "node-sass": "^3.8.0",
-    "pg-native": "^2.2.0",
-    "pg-promise": "^5.5.0",
-    "prop-types": "^15.5.7",
-    "randomatic": ">=3.0.0",
-    "react": "^15.3.0",
-    "react-bootstrap": "^0.30.7",
-    "react-dom": "^15.3.0",
-    "react-router": "^3.0.0",
-    "sass-loader": "^4.0.0",
-    "style-loader": "^0.13.1",
-    "webpack": "^3.10.0",
-    "whatwg-fetch": "^1.1.1"
-  },
-  "devDependencies": {
-    "nodemon": "^1.10.0"
-  }
+    "name": "rappakalja",
+    "version": "2.0.0",
+    "description": "Help tool for the Rappakalja board game",
+    "type": "module",
+    "scripts": {
+        "dev": "vite",
+        "dev:server": "nodemon server/server.js",
+        "build": "vite build",
+        "start": "node server/server.js",
+        "postinstall": "vite build",
+        "lint": "eslint src/ server/",
+        "migrate": "db-migrate",
+        "prod-migrate": "npm run migrate -- up -e prod",
+        "fly:deploy": "fly deploy",
+        "test": "vitest run",
+        "test:watch": "vitest"
+    },
+    "author": "Rasmus Kröger",
+    "license": "MIT",
+    "engines": {
+        "node": ">=20.0.0"
+    },
+    "dependencies": {
+        "class-variance-authority": "^0.7.1",
+        "clsx": "^2.1.1",
+        "cookie": "^1.1.1",
+        "cookie-parser": "^1.4.7",
+        "db-migrate": "^0.11.14",
+        "db-migrate-pg": "^1.5.2",
+        "express": "^5.1.0",
+        "jose": "^6.2.1",
+        "lucide-react": "^0.577.0",
+        "pg-promise": "^11.10.2",
+        "randomatic": "^3.1.1",
+        "socket.io": "^4.8.3",
+        "tailwind-merge": "^3.5.0"
+    },
+    "devDependencies": {
+        "@tailwindcss/vite": "^4.2.1",
+        "@testing-library/jest-dom": "^6.9.1",
+        "@testing-library/react": "^16.3.2",
+        "@testing-library/user-event": "^14.6.1",
+        "@vitejs/plugin-react": "^4.3.4",
+        "eslint": "^9.18.0",
+        "eslint-plugin-react": "^7.37.4",
+        "eslint-plugin-react-hooks": "^5.1.0",
+        "globals": "^15.14.0",
+        "jsdom": "^28.1.0",
+        "nodemon": "^3.1.9",
+        "react": "^19.0.0",
+        "react-dom": "^19.0.0",
+        "react-router-dom": "^6.28.2",
+        "socket.io-client": "^4.8.3",
+        "supertest": "^7.2.2",
+        "tailwindcss": "^4.2.1",
+        "vite": "^6.0.9",
+        "vitest": "^4.1.0"
+    }
 }

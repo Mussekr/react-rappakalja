@@ -1,116 +1,150 @@
-import './style.scss';
-import React, { Component } from 'react';
-import ReactDOM from 'react-dom';
+import './style.css';
+import React, { useState, useEffect } from 'react';
+import { createRoot } from 'react-dom/client';
+import { BrowserRouter, Routes, Route, Outlet, useNavigate } from 'react-router-dom';
 import Answer from './Answer';
 import Game from './Game';
-import { Router, Route, browserHistory, IndexRoute } from 'react-router';
-import PropTypes from 'prop-types';
-import _ from 'lodash';
 import api from './utils/api';
-import 'whatwg-fetch';
+import { Button } from './components/ui/button';
+import { Input } from './components/ui/input';
+import { Card, CardHeader, CardTitle, CardContent } from './components/ui/card';
 
-class Index extends Component {
-    render() {
-        return (
-            <div className="container-fluid">
-                <div className="row">
-                    <div className="col-md-2">
-                    </div>
-                    <div className="col-md-8">
-                        <div className="page-header">
-                            <h1>
-                                Rappakalja! <small>a help tool by <a href="http://github.com/mussekr" target="_blank">Mussekr</a></small>
-                            </h1>
-                        </div>
-                        {this.props.children}
-                    </div>
-                    <div className="col-md-2">
-                    </div>
-                </div>
+function Layout() {
+    return (
+        <div className="min-h-screen bg-gray-50">
+            <div className="mx-auto max-w-2xl px-4 py-8">
+                <header className="mb-8 text-center">
+                    <h1 className="text-3xl font-bold text-gray-900">Rappakalja</h1>
+                    <p className="mt-1 text-sm text-gray-500">A board game helper tool</p>
+                </header>
+                <Outlet />
             </div>
-
-        );
-    }
+        </div>
+    );
 }
 
-Index.propTypes = {
-    children: PropTypes.element.isRequired
-};
+function Home() {
+    const [code, setCode] = useState('');
+    const [name, setName] = useState('');
+    const [error, setError] = useState('');
+    const [mode, setMode] = useState('join'); // 'join' | 'create'
+    const navigate = useNavigate();
 
-class Home extends Component {
-    constructor(props) {
-        super(props);
-        this.state = {
-            code: '',
-            author: '',
-            error: {}
-        };
-    }
-    onChange = (field, value) => {
-        this.setState({
-            [field]: value
-        });
-    };
-    join = () => {
-        const data = {
-            gameId: this.state.code,
-            author: this.state.name
-        };
-        api.post('/api/join', data).then(() => {
-            browserHistory.push('/answer');
-        }).catch(err => this.setState({error: err}));
-    };
-    showError = () => {
-        if(this.state.error.success === false) {
-            return this.state.error.error;
-        } else {
-            return null;
-        }
-    }
-    newGame = () => {
-        api.post('/api/newgame').then(() => {
-            browserHistory.push('/game');
-        }).catch(err => this.setState({error: err}));
-    }
-    checkIfGameExist() {
+    useEffect(() => {
         api.json('/api/session').then(json => {
-            if(!_.isEmpty(json)) {
-                if(json.master === true) {
-                    browserHistory.push('/game');
+            if (json && Object.keys(json).length > 0) {
+                if (json.master === true) {
+                    navigate('/game');
                 } else {
-                    browserHistory.push('/answer');
+                    navigate('/answer');
                 }
             }
         });
-    }
-    componentDidMount() {
-        this.checkIfGameExist();
-    }
-    render() {
-        return (
-            <div>
-                <div className="red">{this.showError()}</div>
-                <div className="form-group">
-                    <label htmlFor="code">Game code</label>
-                    <input type="text" className="form-control" id="code" placeholder="Game code" onChange={ev => this.onChange('code', ev.target.value)} />
+    }, [navigate]);
+
+    const join = () => {
+        if (!name.trim()) {
+            setError('Please enter your name');
+            return;
+        }
+        if (!code.trim()) {
+            setError('Please enter a game code');
+            return;
+        }
+        api.post('/api/join', { gameId: code.toUpperCase(), author: name })
+            .then(() => navigate('/answer'))
+            .catch(err => setError(err.error || 'Failed to join game'));
+    };
+
+    const newGame = () => {
+        if (!name.trim()) {
+            setError('Please enter your name');
+            return;
+        }
+        api.post('/api/newgame', { name })
+            .then(() => navigate('/game'))
+            .catch(err => setError(err.error || 'Failed to create game'));
+    };
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>{mode === 'join' ? 'Join a Game' : 'Create a Game'}</CardTitle>
+            </CardHeader>
+            <CardContent>
+                <div className="space-y-4">
+                    {error && (
+                        <div className="rounded-md bg-red-50 p-3 text-sm text-red-700">
+                            {error}
+                        </div>
+                    )}
+
+                    <div className="flex gap-2">
+                        <Button
+                            variant={mode === 'join' ? 'default' : 'outline'}
+                            onClick={() => { setMode('join'); setError(''); }}
+                            className="flex-1"
+                        >
+                            Join Game
+                        </Button>
+                        <Button
+                            variant={mode === 'create' ? 'default' : 'outline'}
+                            onClick={() => { setMode('create'); setError(''); }}
+                            className="flex-1"
+                        >
+                            New Game
+                        </Button>
+                    </div>
+
+                    <div>
+                        <label htmlFor="playerName" className="mb-1 block text-sm font-medium text-gray-700">
+                            Your name
+                        </label>
+                        <Input
+                            id="playerName"
+                            placeholder="Enter your name"
+                            value={name}
+                            onChange={ev => setName(ev.target.value)}
+                        />
+                    </div>
+
+                    {mode === 'join' && (
+                        <div>
+                            <label htmlFor="code" className="mb-1 block text-sm font-medium text-gray-700">
+                                Game code
+                            </label>
+                            <Input
+                                id="code"
+                                placeholder="e.g. ABC12"
+                                value={code}
+                                onChange={ev => setCode(ev.target.value)}
+                                className="uppercase"
+                            />
+                        </div>
+                    )}
+
+                    <Button
+                        onClick={mode === 'join' ? join : newGame}
+                        className="w-full"
+                        size="lg"
+                    >
+                        {mode === 'join' ? 'Join' : 'Create Game'}
+                    </Button>
                 </div>
-                <div className="form-group">
-                    <label htmlFor="code">Player name</label>
-                    <input type="text" className="form-control" id="code" placeholder="Player name" onChange={ev => this.onChange('name', ev.target.value)} />
-                </div>
-                <button type="submit" onClick={this.join} className="btn btn-default">Join</button>
-                <button type="submit" onClick={this.newGame} className="btn btn-default">Add new game</button>
-            </div>
-        );
-    }
+            </CardContent>
+        </Card>
+    );
 }
 
-ReactDOM.render(
-    <Router history={browserHistory}>
-        <Route path="/" component={Index}>
-            <IndexRoute component={Home} />
-            <Route path="/answer" component={Answer} />
-            <Route path="/game" component={Game} />
-        </Route>
-    </Router>
-    , document.getElementById('app'));
+const root = createRoot(document.getElementById('app'));
+root.render(
+    <BrowserRouter>
+        <Routes>
+            <Route path="/" element={<Layout />}>
+                <Route index element={<Home />} />
+                <Route path="answer" element={<Answer />} />
+                <Route path="game" element={<Game />} />
+            </Route>
+        </Routes>
+    </BrowserRouter>
+);
