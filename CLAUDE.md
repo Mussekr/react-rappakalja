@@ -18,7 +18,7 @@ Rappakalja is a real-time multiplayer board game helper app. A game master creat
 - **Docker:** `docker-compose up` (starts app + PostgreSQL)
 - **Deploy to Fly.io:** `npm run fly:deploy`
 
-Required env vars: `APP_SECRET` (JWT signing key, min 32 chars). For PostgreSQL: `DATABASE_URL` (Fly.io style) **or** `PGHOST`, `PGUSER`, `PGPASSWORD`, `PGDATABASE`.
+Required env vars: `APP_SECRET` (JWT signing key, min 32 chars). For PostgreSQL: `DATABASE_URL` (Fly.io style) **or** `PGHOST`, `PGUSER`, `PGPASSWORD`, `PGDATABASE`. Optional: `OPENAI_API_KEY` (enables AI-generated answers for players).
 
 ## Architecture
 
@@ -86,6 +86,8 @@ All endpoints return `{ success: true, ... }` or `{ success: false, error: "..."
 | GET | `/api/session` | — | Current player session state (empty `{}` if not in a game) |
 | POST | `/api/session/del` | — | Master: ends game. Player: leaves game. |
 | GET | `/api/health` | — | Health check for Fly.io; returns `{ status: "ok" }` |
+| GET | `/api/ai/status` | — | Check if AI generation is available: `{ available: bool }` |
+| POST | `/api/ai/generate` | player (not master) | Generate AI answer; body: `{ questionType, question }`. Types: `sana`, `henkilö`, `elokuvakäsikirjoitus`, `lyhenne`, `laki`. Rate limited (10s). |
 
 ## WebSocket Events (server → client)
 
