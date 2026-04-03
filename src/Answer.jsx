@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import api from './utils/api';
 import { useSocket } from './hooks/useSocket';
 import { Button } from './components/ui/button';
+import { Input } from './components/ui/input';
 import { Textarea } from './components/ui/textarea';
 import { Card, CardHeader, CardTitle, CardContent } from './components/ui/card';
 
@@ -12,6 +13,11 @@ function Answer() {
     const [author, setAuthor] = useState('');
     const [answer, setAnswer] = useState('');
     const [error, setError] = useState('');
+    const [aiAvailable, setAiAvailable] = useState(false);
+    const [aiLoading, setAiLoading] = useState(false);
+    const [aiPreview, setAiPreview] = useState('');
+    const [questionType, setQuestionType] = useState('sana');
+    const [question, setQuestion] = useState('');
     const navigate = useNavigate();
 
     const getSession = useCallback(() => {
@@ -37,7 +43,32 @@ function Answer() {
 
     useEffect(() => {
         getSession();
+        api.json('/api/ai/status').then(json => {
+            if (json && json.available) setAiAvailable(true);
+        }).catch(() => {});
     }, [getSession]);
+
+    const generateAnswer = () => {
+        if (!question.trim()) {
+            setError('Syötä kysymys ensin!');
+            return;
+        }
+        setAiLoading(true);
+        setError('');
+        api.post('/api/ai/generate', { questionType, question: question.trim() })
+            .then(json => setAiPreview(json.answer))
+            .catch(() => setError('AI-generointi epäonnistui. Yritä uudelleen.'))
+            .finally(() => setAiLoading(false));
+    };
+
+    const acceptAiAnswer = () => {
+        setAnswer(aiPreview);
+        setAiPreview('');
+    };
+
+    const cancelAiAnswer = () => {
+        setAiPreview('');
+    };
 
     const sendAnswer = () => {
         if (answer.trim()) {
@@ -84,6 +115,64 @@ function Answer() {
                 <div className="space-y-4">
                     {error && (
                         <div className="rounded-md bg-red-50 p-3 text-sm text-red-700">{error}</div>
+                    )}
+                    {aiAvailable && (
+                        <div className="space-y-2 rounded-md border border-gray-200 bg-gray-50 p-3">
+                            <p className="text-sm font-medium text-gray-700">AI-avustettu vastaus</p>
+                            {!aiPreview ? (
+                                <>
+                                    <div className="flex gap-2">
+                                        <select
+                                            value={questionType}
+                                            onChange={ev => setQuestionType(ev.target.value)}
+                                            className="rounded-md border border-gray-300 bg-white px-2 py-1.5 text-sm"
+                                        >
+                                            <option value="sana">Sana</option>
+                                            <option value="henkilö">Henkilö</option>
+                                            <option value="elokuvakäsikirjoitus">Elokuvakäsikirjoitus</option>
+                                            <option value="lyhenne">Lyhenne</option>
+                                            <option value="laki">Laki</option>
+                                        </select>
+                                        <Input
+                                            value={question}
+                                            onChange={ev => setQuestion(ev.target.value)}
+                                            placeholder="Syötä kysymys..."
+                                            className="flex-1"
+                                        />
+                                    </div>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={generateAnswer}
+                                        disabled={aiLoading}
+                                    >
+                                        {aiLoading ? 'Generoidaan...' : 'Generoi vastaus'}
+                                    </Button>
+                                </>
+                            ) : (
+                                <>
+                                    <div className="rounded-md border border-blue-200 bg-blue-50 p-3 text-sm text-gray-800">
+                                        {aiPreview}
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <Button size="sm" onClick={acceptAiAnswer}>
+                                            Hyväksy
+                                        </Button>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={generateAnswer}
+                                            disabled={aiLoading}
+                                        >
+                                            {aiLoading ? 'Generoidaan...' : 'Uusi vastaus'}
+                                        </Button>
+                                        <Button variant="ghost" size="sm" onClick={cancelAiAnswer}>
+                                            Peruuta
+                                        </Button>
+                                    </div>
+                                </>
+                            )}
+                        </div>
                     )}
                     <div>
                         <label htmlFor="answerField" className="mb-1 block text-sm font-medium text-gray-700">

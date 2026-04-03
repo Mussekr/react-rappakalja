@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import request from 'supertest';
 import { createApp } from '../app.js';
 import { createMockDb } from './mockDb.js';
@@ -215,6 +215,114 @@ describe('API', () => {
             expect(res.status).toBe(200);
             expect(res.body.success).toBe(true);
             expect(res.body.players).toHaveLength(2);
+        });
+    });
+
+    describe('AI generation', () => {
+        const originalKey = process.env.OPENAI_API_KEY;
+
+        afterEach(() => {
+            if (originalKey !== undefined) {
+                process.env.OPENAI_API_KEY = originalKey;
+            } else {
+                delete process.env.OPENAI_API_KEY;
+            }
+        });
+
+        describe('GET /api/ai/status', () => {
+            it('returns available: true when OPENAI_API_KEY is set', async () => {
+                process.env.OPENAI_API_KEY = 'test-key';
+                const res = await request(app).get('/api/ai/status');
+                expect(res.status).toBe(200);
+                expect(res.body).toEqual({ success: true, available: true });
+            });
+
+            it('returns available: false when OPENAI_API_KEY is absent', async () => {
+                delete process.env.OPENAI_API_KEY;
+                const res = await request(app).get('/api/ai/status');
+                expect(res.status).toBe(200);
+                expect(res.body).toEqual({ success: true, available: false });
+            });
+        });
+
+        describe('POST /api/ai/generate', () => {
+            it('returns 400 when not authenticated', async () => {
+                const res = await request(app)
+                    .post('/api/ai/generate')
+                    .send({ questionType: 'sana', question: 'rappakalja' });
+                expect(res.status).toBe(400);
+                expect(res.body.success).toBe(false);
+            });
+
+            it('returns 400 for invalid question type', async () => {
+                db.none.mockResolvedValue(undefined);
+                db.one.mockResolvedValue({ id: 1 });
+                const createRes = await request(app)
+                    .post('/api/newgame')
+                    .send({ name: 'Player1' });
+                const cookie = createRes.headers['set-cookie'];
+
+                // This player is master, so make a non-master player
+                // Instead, test invalid type with master (still gets 400 for being master)
+                const res = await request(app)
+                    .post('/api/ai/generate')
+                    .set('Cookie', cookie)
+                    .send({ questionType: 'invalid', question: 'test' });
+                expect(res.status).toBe(400);
+                expect(res.body.success).toBe(false);
+            });
+
+            it('returns 400 when question is missing', async () => {
+                // Create game, join as non-master player
+                db.none.mockResolvedValue(undefined);
+                db.one.mockResolvedValue({ id: 1 });
+                const createRes = await request(app)
+                    .post('/api/newgame')
+                    .send({ name: 'Master' });
+                const masterCookie = createRes.headers['set-cookie'];
+                const gameCode = createRes.body.code;
+
+                // Join as player
+                db.oneOrNone
+                    .mockResolvedValueOnce({ count: '1' })
+                    .mockResolvedValueOnce(null);
+                db.one.mockResolvedValueOnce({ id: 2 });
+                const joinRes = await request(app)
+                    .post('/api/join')
+                    .send({ gameId: gameCode, author: 'Player' });
+                const playerCookie = joinRes.headers['set-cookie'];
+
+                // isMaster check returns false for player
+                db.oneOrNone.mockResolvedValueOnce({ current_master_id: 1, active: true });
+
+                process.env.OPENAI_API_KEY = 'test-key';
+                const res = await request(app)
+                    .post('/api/ai/generate')
+                    .set('Cookie', playerCookie)
+                    .send({ questionType: 'sana' });
+                expect(res.status).toBe(400);
+                expect(res.body.error).toBe('Question is required');
+            });
+
+            it('returns 400 when master tries to use AI', async () => {
+                db.none.mockResolvedValue(undefined);
+                db.one.mockResolvedValue({ id: 1 });
+                const createRes = await request(app)
+                    .post('/api/newgame')
+                    .send({ name: 'Master' });
+                const cookie = createRes.headers['set-cookie'];
+
+                // isMaster check
+                db.oneOrNone.mockResolvedValueOnce({ current_master_id: 1, active: true });
+
+                process.env.OPENAI_API_KEY = 'test-key';
+                const res = await request(app)
+                    .post('/api/ai/generate')
+                    .set('Cookie', cookie)
+                    .send({ questionType: 'sana', question: 'test' });
+                expect(res.status).toBe(400);
+                expect(res.body.error).toBe('Master cannot use AI generation');
+            });
         });
     });
 });

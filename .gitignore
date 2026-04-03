@@ -1,5 +1,6 @@
 /node_modules
 /dist
+.env
 public/style.css
 public/bundle.js
 public/style.css.map

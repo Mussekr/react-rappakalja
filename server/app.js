@@ -3,6 +3,7 @@ import cookieParser from 'cookie-parser';
 import randomize from 'randomatic';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import OpenAI from 'openai';
 import { authMiddleware } from './authMiddleware.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -332,6 +333,99 @@ export function createApp(db) {
             }
         } catch {
             res.status(500).send({ success: false, error: 'Internal server error' });
+        }
+    });
+
+    // --- AI answer generation ---
+
+    let openaiClient = null;
+    function getOpenAIClient() {
+        if (!process.env.OPENAI_API_KEY) return null;
+        if (!openaiClient) {
+            openaiClient = new OpenAI();
+        }
+        return openaiClient;
+    }
+
+    const BASE_PROMPT = 'Olet Rappakalja-lautapelin pelaaja.';
+    const AI_PROMPTS = {
+        'sana': `${BASE_PROMPT} Sinulle annetaan sana ja sinun pitää keksiä sille uskottava`
+            + ' mutta väärä määritelmä suomeksi. Vastaa lyhyesti, yhdellä tai kahdella'
+            + ' lauseella, samaan tyyliin kuin sanakirjamääritelmä. Vastaa vain määritelmä.',
+        'henkilö': `${BASE_PROMPT} Sinulle annetaan henkilön nimi ja sinun pitää keksiä`
+            + ' hänelle uskottava mutta väärä kuvaus suomeksi. Vastaa lyhyesti, yhdellä'
+            + ' tai kahdella lauseella. Vastaa vain kuvaus.',
+        'elokuvakäsikirjoitus': `${BASE_PROMPT} Sinulle annetaan elokuvan nimi ja sinun`
+            + ' pitää keksiä sille uskottava mutta väärä juonikuvaus suomeksi. Vastaa'
+            + ' lyhyesti, kahdella tai kolmella lauseella. Vastaa vain juonikuvaus.',
+        'lyhenne': `${BASE_PROMPT} Sinulle annetaan lyhenne ja sinun pitää keksiä sille`
+            + ' uskottava mutta väärä selitys suomeksi. Vastaa lyhyesti, yhdellä'
+            + ' lauseella. Vastaa vain selitys.',
+        'laki': `${BASE_PROMPT} Sinulle annetaan lain nimi tai pykälä ja sinun pitää`
+            + ' keksiä sille uskottava mutta väärä selitys suomeksi. Vastaa lyhyesti,'
+            + ' yhdellä tai kahdella lauseella. Vastaa vain selitys.'
+    };
+    const VALID_QUESTION_TYPES = Object.keys(AI_PROMPTS);
+    const aiRateLimit = new Map();
+
+    app.get('/api/ai/status', (req, res) => {
+        res.send({ success: true, available: !!process.env.OPENAI_API_KEY });
+    });
+
+    app.post('/api/ai/generate', async (req, res) => {
+        if (!req.player) {
+            res.status(400).send({ success: false, error: 'Not in a game' });
+            return;
+        }
+
+        const masterCheck = await isMaster(req);
+        if (masterCheck) {
+            res.status(400).send({ success: false, error: 'Master cannot use AI generation' });
+            return;
+        }
+
+        const client = getOpenAIClient();
+        if (!client) {
+            res.status(400).send({ success: false, error: 'AI generation is not available' });
+            return;
+        }
+
+        const { questionType, question } = req.body;
+        if (!questionType || !VALID_QUESTION_TYPES.includes(questionType)) {
+            res.status(400).send({ success: false, error: 'Invalid question type' });
+            return;
+        }
+        if (!question || !String(question).trim()) {
+            res.status(400).send({ success: false, error: 'Question is required' });
+            return;
+        }
+
+        const now = Date.now();
+        const lastRequest = aiRateLimit.get(req.player.playerId);
+        if (lastRequest && now - lastRequest < 10000) {
+            res.status(429).send({ success: false, error: 'Odota hetki ennen seuraavaa generointia' });
+            return;
+        }
+        aiRateLimit.set(req.player.playerId, now);
+
+        try {
+            const completion = await client.chat.completions.create({
+                model: 'gpt-4o-mini',
+                messages: [
+                    { role: 'system', content: AI_PROMPTS[questionType] },
+                    { role: 'user', content: String(question).trim() }
+                ],
+                max_tokens: 200,
+                temperature: 0.9
+            });
+            const generatedAnswer = completion.choices[0]?.message?.content?.trim();
+            if (!generatedAnswer) {
+                res.status(500).send({ success: false, error: 'AI did not return an answer' });
+                return;
+            }
+            res.send({ success: true, answer: generatedAnswer });
+        } catch {
+            res.status(500).send({ success: false, error: 'AI-vastauksen generointi epäonnistui. Yritä uudelleen tai kirjoita oma vastaus.' });
         }
     });
 
