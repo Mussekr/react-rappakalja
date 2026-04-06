@@ -457,7 +457,7 @@ export function createApp(db) {
                     { role: 'system', content: AI_PROMPTS[questionType] },
                     { role: 'user', content: String(question).trim() }
                 ],
-                max_tokens: 200,
+                max_completion_tokens: 200,
                 temperature: 0.9
             });
             const generatedAnswer = completion.choices[0]?.message?.content?.trim();
@@ -572,7 +572,7 @@ export function createApp(db) {
                     },
                     { role: 'user', content: QUESTION_PROMPTS[questionType] }
                 ],
-                max_tokens: 300,
+                max_completion_tokens: 300,
                 temperature: 1.0,
                 response_format: { type: 'json_object' }
             });

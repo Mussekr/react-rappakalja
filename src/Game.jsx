@@ -64,7 +64,7 @@ function MasterAnswerForm({ round, onAnswered, prefillAnswer }) {
                             rows={3}
                             onChange={ev => setAnswer(ev.target.value)}
                             value={answer}
-                            placeholder="Kirjoita vastauksesi..."
+                            placeholder="Kirjoita oikea vastaus..."
                         />
                     </div>
                     <Button onClick={submit} className="w-full">Lähetä vastaus</Button>
