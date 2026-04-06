@@ -44,7 +44,7 @@ describe('Answer', () => {
         );
 
         expect(await screen.findByText('TestPlayer')).toBeInTheDocument();
-        expect(screen.getByLabelText('Your answer')).toBeInTheDocument();
+        expect(screen.getByLabelText('Vastauksesi')).toBeInTheDocument();
     });
 
     it('shows waiting message when player has answered', async () => {
@@ -62,7 +62,7 @@ describe('Answer', () => {
             </MemoryRouter>
         );
 
-        expect(await screen.findByText('Waiting for the next round...')).toBeInTheDocument();
+        expect(await screen.findByText('Odotetaan seuraavaa kierrosta...')).toBeInTheDocument();
     });
 
     it('navigates home when game is not active', async () => {

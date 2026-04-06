@@ -98,7 +98,7 @@ describe('Game', () => {
             </MemoryRouter>
         );
 
-        expect(await screen.findByText('Your turn to answer first!')).toBeInTheDocument();
+        expect(await screen.findByText('Sinun vuorosi vastata ensin!')).toBeInTheDocument();
     });
 
     it('navigates to /answer when master role is transferred away', async () => {

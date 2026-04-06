@@ -15,7 +15,7 @@ function Layout() {
             <div className="mx-auto max-w-2xl px-4 py-8">
                 <header className="mb-8 text-center">
                     <h1 className="text-3xl font-bold text-gray-900">Rappakalja</h1>
-                    <p className="mt-1 text-sm text-gray-500">A board game helper tool</p>
+                    <p className="mt-1 text-sm text-gray-500">Lautapelin apuväline</p>
                 </header>
                 <Outlet />
             </div>
@@ -44,32 +44,32 @@ function Home() {
 
     const join = () => {
         if (!name.trim()) {
-            setError('Please enter your name');
+            setError('Syötä nimesi');
             return;
         }
         if (!code.trim()) {
-            setError('Please enter a game code');
+            setError('Syötä pelikoodi');
             return;
         }
         api.post('/api/join', { gameId: code.toUpperCase(), author: name })
             .then(() => navigate('/answer'))
-            .catch(err => setError(err.error || 'Failed to join game'));
+            .catch(err => setError(err.error || 'Peliin liittyminen epäonnistui'));
     };
 
     const newGame = () => {
         if (!name.trim()) {
-            setError('Please enter your name');
+            setError('Syötä nimesi');
             return;
         }
         api.post('/api/newgame', { name })
             .then(() => navigate('/game'))
-            .catch(err => setError(err.error || 'Failed to create game'));
+            .catch(err => setError(err.error || 'Pelin luominen epäonnistui'));
     };
 
     return (
         <Card>
             <CardHeader>
-                <CardTitle>{mode === 'join' ? 'Join a Game' : 'Create a Game'}</CardTitle>
+                <CardTitle>{mode === 'join' ? 'Liity peliin' : 'Luo peli'}</CardTitle>
             </CardHeader>
             <CardContent>
                 <div className="space-y-4">
@@ -85,24 +85,24 @@ function Home() {
                             onClick={() => { setMode('join'); setError(''); }}
                             className="flex-1"
                         >
-                            Join Game
+                            Liity peliin
                         </Button>
                         <Button
                             variant={mode === 'create' ? 'default' : 'outline'}
                             onClick={() => { setMode('create'); setError(''); }}
                             className="flex-1"
                         >
-                            New Game
+                            Uusi peli
                         </Button>
                     </div>
 
                     <div>
                         <label htmlFor="playerName" className="mb-1 block text-sm font-medium text-gray-700">
-                            Your name
+                            Nimesi
                         </label>
                         <Input
                             id="playerName"
-                            placeholder="Enter your name"
+                            placeholder="Syötä nimesi"
                             value={name}
                             onChange={ev => setName(ev.target.value)}
                         />
@@ -111,11 +111,11 @@ function Home() {
                     {mode === 'join' && (
                         <div>
                             <label htmlFor="code" className="mb-1 block text-sm font-medium text-gray-700">
-                                Game code
+                                Pelikoodi
                             </label>
                             <Input
                                 id="code"
-                                placeholder="e.g. ABC12"
+                                placeholder="esim. ABC12"
                                 value={code}
                                 onChange={ev => setCode(ev.target.value)}
                                 className="uppercase"
@@ -128,7 +128,7 @@ function Home() {
                         className="w-full"
                         size="lg"
                     >
-                        {mode === 'join' ? 'Join' : 'Create Game'}
+                        {mode === 'join' ? 'Liity' : 'Luo peli'}
                     </Button>
                 </div>
             </CardContent>

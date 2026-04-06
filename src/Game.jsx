@@ -27,24 +27,28 @@ function AnswerCard({ player, answer }) {
     );
 }
 
-function MasterAnswerForm({ round, onAnswered }) {
+function MasterAnswerForm({ round, onAnswered, prefillAnswer }) {
     const [answer, setAnswer] = useState('');
     const [error, setError] = useState('');
 
+    useEffect(() => {
+        if (prefillAnswer) setAnswer(prefillAnswer);
+    }, [prefillAnswer]);
+
     const submit = () => {
         if (!answer.trim()) {
-            setError('Answer cannot be empty!');
+            setError('Vastaus ei voi olla tyhjä!');
             return;
         }
         api.post('/api/answer', { currentRound: round, answer }).then(() => {
             onAnswered();
-        }).catch(() => setError('Failed to submit answer'));
+        }).catch(() => setError('Vastauksen lähettäminen epäonnistui'));
     };
 
     return (
         <Card>
             <CardHeader>
-                <CardTitle className="text-lg">Your turn to answer first!</CardTitle>
+                <CardTitle className="text-lg">Sinun vuorosi vastata ensin!</CardTitle>
             </CardHeader>
             <CardContent>
                 <div className="space-y-3">
@@ -53,17 +57,17 @@ function MasterAnswerForm({ round, onAnswered }) {
                     )}
                     <div>
                         <label htmlFor="masterAnswer" className="mb-1 block text-sm font-medium text-gray-700">
-                            Your answer
+                            Vastauksesi
                         </label>
                         <Textarea
                             id="masterAnswer"
                             rows={3}
                             onChange={ev => setAnswer(ev.target.value)}
                             value={answer}
-                            placeholder="Type your answer..."
+                            placeholder="Kirjoita oikea vastaus..."
                         />
                     </div>
-                    <Button onClick={submit} className="w-full">Submit my answer</Button>
+                    <Button onClick={submit} className="w-full">Lähetä vastaus</Button>
                 </div>
             </CardContent>
         </Card>
@@ -74,7 +78,7 @@ function NextMasterPicker({ players, currentPlayerId, onPick }) {
     return (
         <Card>
             <CardHeader>
-                <CardTitle className="text-lg">Choose the next master</CardTitle>
+                <CardTitle className="text-lg">Valitse seuraava pelinjohtaja</CardTitle>
             </CardHeader>
             <CardContent>
                 <div className="flex flex-wrap gap-2">
@@ -84,9 +88,104 @@ function NextMasterPicker({ players, currentPlayerId, onPick }) {
                             variant={p.id === currentPlayerId ? 'outline' : 'default'}
                             onClick={() => onPick(p.id)}
                         >
-                            {p.id === currentPlayerId ? `${p.name} (me)` : p.name}
+                            {p.id === currentPlayerId ? `${p.name} (minä)` : p.name}
                         </Button>
                     ))}
+                </div>
+            </CardContent>
+        </Card>
+    );
+}
+
+function QuestionGenerator({ onUseAnswer }) {
+    const [questionType, setQuestionType] = useState('sana');
+    const [generated, setGenerated] = useState(null);
+    const [shared, setShared] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
+
+    const generate = () => {
+        setLoading(true);
+        setError('');
+        setShared(false);
+        api.post('/api/ai/generate-question', { questionType })
+            .then(json => setGenerated({ question: json.question, answer: json.answer }))
+            .catch(() => setError('Generointi epäonnistui. Yritä uudelleen.'))
+            .finally(() => setLoading(false));
+    };
+
+    const share = () => {
+        if (!generated) return;
+        api.post('/api/question', { question: generated.question, questionType })
+            .then(() => setShared(true))
+            .catch(() => setError('Jakaminen epäonnistui.'));
+    };
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle className="text-lg">Generoi kysymys</CardTitle>
+            </CardHeader>
+            <CardContent>
+                <div className="space-y-3">
+                    {error && (
+                        <div className="rounded-md bg-red-50 p-3 text-sm text-red-700">{error}</div>
+                    )}
+                    {!generated ? (
+                        <div className="flex gap-2">
+                            <select
+                                value={questionType}
+                                onChange={ev => setQuestionType(ev.target.value)}
+                                className="rounded-md border border-gray-300 bg-white px-2 py-1.5 text-sm"
+                            >
+                                <option value="sana">Sana</option>
+                                <option value="henkilö">Henkilö</option>
+                                <option value="elokuvakäsikirjoitus">Elokuvakäsikirjoitus</option>
+                                <option value="lyhenne">Lyhenne</option>
+                                <option value="laki">Laki</option>
+                            </select>
+                            <Button variant="outline" size="sm" onClick={generate} disabled={loading}>
+                                {loading ? 'Generoidaan...' : 'Generoi'}
+                            </Button>
+                        </div>
+                    ) : (
+                        <div className="space-y-3">
+                            <div>
+                                <p className="text-xs font-medium uppercase text-gray-500">Kysymys (lue ääneen)</p>
+                                <div className="mt-1 rounded-md border border-blue-200 bg-blue-50 p-3 text-lg font-semibold">
+                                    {generated.question}
+                                </div>
+                            </div>
+                            <div>
+                                <p className="text-xs font-medium uppercase text-gray-500">Oikea vastaus (vain sinulle)</p>
+                                <div className="mt-1 flex items-start gap-2 rounded-md border border-green-200 bg-green-50 p-3">
+                                    <span className="flex-1 text-sm">{generated.answer}</span>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => onUseAnswer(generated.answer)}
+                                    >
+                                        Käytä
+                                    </Button>
+                                </div>
+                            </div>
+                            <div className="flex gap-2">
+                                {!shared ? (
+                                    <Button size="sm" onClick={share}>
+                                        Jaa pelaajille
+                                    </Button>
+                                ) : (
+                                    <Badge variant="success">Jaettu!</Badge>
+                                )}
+                                <Button variant="outline" size="sm" onClick={generate} disabled={loading}>
+                                    {loading ? 'Generoidaan...' : 'Uusi kysymys'}
+                                </Button>
+                                <Button variant="ghost" size="sm" onClick={() => { setGenerated(null); setShared(false); }}>
+                                    Sulje
+                                </Button>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </CardContent>
         </Card>
@@ -101,6 +200,8 @@ function Game() {
     const [players, setPlayers] = useState([]);
     const [playerId, setPlayerId] = useState(null);
     const [pickingNextMaster, setPickingNextMaster] = useState(false);
+    const [aiAvailable, setAiAvailable] = useState(false);
+    const [prefillAnswer, setPrefillAnswer] = useState('');
     const navigate = useNavigate();
     const currentRoundRef = useRef('');
 
@@ -160,6 +261,9 @@ function Game() {
     useEffect(() => {
         getSession();
         getPlayers();
+        api.json('/api/ai/status').then(json => {
+            if (json && json.available) setAiAvailable(true);
+        }).catch(() => {});
     }, [getSession, getPlayers]);
 
     const onMasterAnswered = () => {
@@ -181,7 +285,7 @@ function Game() {
     };
 
     const endGame = () => {
-        if (confirm('Are you sure you want to end the game?')) {
+        if (confirm('Haluatko varmasti lopettaa pelin?')) {
             api.post('/api/session/del').then(() => navigate('/'));
         }
     };
@@ -197,16 +301,16 @@ function Game() {
                 <CardContent className="flex items-center justify-between pt-4">
                     <div>
                         <div className="flex items-center gap-2">
-                            <span className="text-sm text-gray-500">Room</span>
+                            <span className="text-sm text-gray-500">Huone</span>
                             <Badge className="font-mono text-lg">{gameId}</Badge>
                         </div>
                         <div className="mt-1 flex items-center gap-2">
-                            <span className="text-sm text-gray-500">Round</span>
+                            <span className="text-sm text-gray-500">Kierros</span>
                             <Badge variant="secondary">{serverCurrentRound}</Badge>
                         </div>
                     </div>
                     <div className="text-right">
-                        <p className="text-sm text-gray-500">Players</p>
+                        <p className="text-sm text-gray-500">Pelaajat</p>
                         <div className="mt-1 flex flex-wrap justify-end gap-1">
                             {players.map(p => (
                                 <Badge key={p.id} variant={p.is_master ? 'default' : 'secondary'}>
@@ -220,16 +324,19 @@ function Game() {
 
             {/* Master answer phase */}
             {phase === 'answering' && (
-                <MasterAnswerForm round={serverCurrentRound} onAnswered={onMasterAnswered} />
+                <>
+                    {aiAvailable && <QuestionGenerator onUseAnswer={setPrefillAnswer} />}
+                    <MasterAnswerForm round={serverCurrentRound} onAnswered={onMasterAnswered} prefillAnswer={prefillAnswer} />
+                </>
             )}
 
             {/* Reveal phase */}
             {phase === 'reveal' && !pickingNextMaster && (
                 <div className="space-y-4">
                     <div className="flex flex-wrap gap-2">
-                        <Button variant="outline" onClick={shuffleAnswers}>Shuffle answers</Button>
-                        <Button onClick={nextRound}>Next round</Button>
-                        <Button variant="destructive" onClick={endGame}>End game</Button>
+                        <Button variant="outline" onClick={shuffleAnswers}>Sekoita vastaukset</Button>
+                        <Button onClick={nextRound}>Seuraava kierros</Button>
+                        <Button variant="destructive" onClick={endGame}>Lopeta peli</Button>
                     </div>
                     <div>
                         {answers.map(a => (
