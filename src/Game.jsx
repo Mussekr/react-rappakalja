@@ -93,6 +93,94 @@ function NextMasterPicker({ players, currentPlayerId, onPick }) {
     );
 }
 
+function QuestionGenerator() {
+    const [questionType, setQuestionType] = useState('sana');
+    const [generated, setGenerated] = useState(null);
+    const [shared, setShared] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
+
+    const generate = () => {
+        setLoading(true);
+        setError('');
+        setShared(false);
+        api.post('/api/ai/generate-question', { questionType })
+            .then(json => setGenerated({ question: json.question, answer: json.answer }))
+            .catch(() => setError('Generointi epäonnistui. Yritä uudelleen.'))
+            .finally(() => setLoading(false));
+    };
+
+    const share = () => {
+        if (!generated) return;
+        api.post('/api/question', { question: generated.question, questionType })
+            .then(() => setShared(true))
+            .catch(() => setError('Jakaminen epäonnistui.'));
+    };
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle className="text-lg">Generoi kysymys</CardTitle>
+            </CardHeader>
+            <CardContent>
+                <div className="space-y-3">
+                    {error && (
+                        <div className="rounded-md bg-red-50 p-3 text-sm text-red-700">{error}</div>
+                    )}
+                    {!generated ? (
+                        <div className="flex gap-2">
+                            <select
+                                value={questionType}
+                                onChange={ev => setQuestionType(ev.target.value)}
+                                className="rounded-md border border-gray-300 bg-white px-2 py-1.5 text-sm"
+                            >
+                                <option value="sana">Sana</option>
+                                <option value="henkilö">Henkilö</option>
+                                <option value="elokuvakäsikirjoitus">Elokuvakäsikirjoitus</option>
+                                <option value="lyhenne">Lyhenne</option>
+                                <option value="laki">Laki</option>
+                            </select>
+                            <Button variant="outline" size="sm" onClick={generate} disabled={loading}>
+                                {loading ? 'Generoidaan...' : 'Generoi'}
+                            </Button>
+                        </div>
+                    ) : (
+                        <div className="space-y-3">
+                            <div>
+                                <p className="text-xs font-medium uppercase text-gray-500">Kysymys (lue ääneen)</p>
+                                <div className="mt-1 rounded-md border border-blue-200 bg-blue-50 p-3 text-lg font-semibold">
+                                    {generated.question}
+                                </div>
+                            </div>
+                            <div>
+                                <p className="text-xs font-medium uppercase text-gray-500">Oikea vastaus (vain sinulle)</p>
+                                <div className="mt-1 rounded-md border border-green-200 bg-green-50 p-3 text-sm">
+                                    {generated.answer}
+                                </div>
+                            </div>
+                            <div className="flex gap-2">
+                                {!shared ? (
+                                    <Button size="sm" onClick={share}>
+                                        Jaa pelaajille
+                                    </Button>
+                                ) : (
+                                    <Badge variant="success">Jaettu!</Badge>
+                                )}
+                                <Button variant="outline" size="sm" onClick={generate} disabled={loading}>
+                                    {loading ? 'Generoidaan...' : 'Uusi kysymys'}
+                                </Button>
+                                <Button variant="ghost" size="sm" onClick={() => { setGenerated(null); setShared(false); }}>
+                                    Sulje
+                                </Button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </CardContent>
+        </Card>
+    );
+}
+
 function Game() {
     const [gameId, setGameId] = useState('');
     const [serverCurrentRound, setServerCurrentRound] = useState('');
@@ -101,6 +189,7 @@ function Game() {
     const [players, setPlayers] = useState([]);
     const [playerId, setPlayerId] = useState(null);
     const [pickingNextMaster, setPickingNextMaster] = useState(false);
+    const [aiAvailable, setAiAvailable] = useState(false);
     const navigate = useNavigate();
     const currentRoundRef = useRef('');
 
@@ -160,6 +249,9 @@ function Game() {
     useEffect(() => {
         getSession();
         getPlayers();
+        api.json('/api/ai/status').then(json => {
+            if (json && json.available) setAiAvailable(true);
+        }).catch(() => {});
     }, [getSession, getPlayers]);
 
     const onMasterAnswered = () => {
@@ -220,7 +312,10 @@ function Game() {
 
             {/* Master answer phase */}
             {phase === 'answering' && (
-                <MasterAnswerForm round={serverCurrentRound} onAnswered={onMasterAnswered} />
+                <>
+                    {aiAvailable && <QuestionGenerator />}
+                    <MasterAnswerForm round={serverCurrentRound} onAnswered={onMasterAnswered} />
+                </>
             )}
 
             {/* Reveal phase */}

@@ -18,6 +18,7 @@ function Answer() {
     const [aiPreview, setAiPreview] = useState('');
     const [questionType, setQuestionType] = useState('sana');
     const [question, setQuestion] = useState('');
+    const [activeQuestion, setActiveQuestion] = useState(null);
     const navigate = useNavigate();
 
     const getSession = useCallback(() => {
@@ -36,15 +37,23 @@ function Answer() {
     }, [navigate]);
 
     useSocket({
-        'round:advanced': () => getSession(),
+        'round:advanced': () => { getSession(); setActiveQuestion(null); },
         'game:ended': () => navigate('/'),
-        'master:changed': () => getSession()
+        'master:changed': () => getSession(),
+        'question:updated': (data) => {
+            setActiveQuestion(data);
+            if (data && data.question) setQuestion(data.question);
+            if (data && data.questionType) setQuestionType(data.questionType);
+        }
     });
 
     useEffect(() => {
         getSession();
         api.json('/api/ai/status').then(json => {
             if (json && json.available) setAiAvailable(true);
+        }).catch(() => {});
+        api.json('/api/question').then(json => {
+            if (json && json.question) setActiveQuestion(json);
         }).catch(() => {});
     }, [getSession]);
 
@@ -113,6 +122,12 @@ function Answer() {
             </CardHeader>
             <CardContent>
                 <div className="space-y-4">
+                    {activeQuestion && (
+                        <div className="rounded-md border border-blue-200 bg-blue-50 p-3">
+                            <p className="text-xs font-medium uppercase text-gray-500">Kysymys</p>
+                            <p className="mt-1 text-lg font-semibold">{activeQuestion.question}</p>
+                        </div>
+                    )}
                     {error && (
                         <div className="rounded-md bg-red-50 p-3 text-sm text-red-700">{error}</div>
                     )}

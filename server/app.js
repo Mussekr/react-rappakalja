@@ -244,6 +244,7 @@ export function createApp(db) {
                 }
             });
 
+            activeQuestions.delete(req.player.gameCode);
             res.send({ success: true });
             emitToGame(req.player.gameCode, 'round:advanced');
             if (req.body.nextMasterId) {
@@ -322,6 +323,7 @@ export function createApp(db) {
             const gameCode = req.player.gameCode;
             if (master) {
                 await db.none('UPDATE games SET active = FALSE WHERE code = $1', [gameCode]);
+                activeQuestions.delete(gameCode);
                 req.clearToken();
                 res.send({ success: true });
                 emitToGame(gameCode, 'game:ended');
@@ -334,6 +336,45 @@ export function createApp(db) {
         } catch {
             res.status(500).send({ success: false, error: 'Internal server error' });
         }
+    });
+
+    // --- Active question (in-memory, per game) ---
+
+    const activeQuestions = new Map();
+
+    app.post('/api/question', async (req, res) => {
+        if (!req.player) {
+            res.status(400).send({ success: false, error: 'Not in a game' });
+            return;
+        }
+        const masterCheck = await isMaster(req);
+        if (!masterCheck) {
+            res.status(400).send({ success: false, error: 'Only master can set the question' });
+            return;
+        }
+        const { question, questionType } = req.body;
+        if (!question || !String(question).trim()) {
+            res.status(400).send({ success: false, error: 'Question is required' });
+            return;
+        }
+        activeQuestions.set(req.player.gameCode, {
+            question: String(question).trim(),
+            questionType: questionType || ''
+        });
+        emitToGame(req.player.gameCode, 'question:updated', {
+            question: String(question).trim(),
+            questionType: questionType || ''
+        });
+        res.send({ success: true });
+    });
+
+    app.get('/api/question', (req, res) => {
+        if (!req.player) {
+            res.send({ success: true, question: null });
+            return;
+        }
+        const q = activeQuestions.get(req.player.gameCode) || null;
+        res.send({ success: true, ...q });
     });
 
     // --- AI answer generation ---
@@ -361,9 +402,10 @@ export function createApp(db) {
         'lyhenne': `${BASE_PROMPT} Sinulle annetaan lyhenne ja sinun pitää keksiä sille`
             + ' uskottava mutta väärä selitys suomeksi. Vastaa lyhyesti, yhdellä'
             + ' lauseella. Vastaa vain selitys.',
-        'laki': `${BASE_PROMPT} Sinulle annetaan lain nimi tai pykälä ja sinun pitää`
-            + ' keksiä sille uskottava mutta väärä selitys suomeksi. Vastaa lyhyesti,'
-            + ' yhdellä tai kahdella lauseella. Vastaa vain selitys.'
+        'laki': `${BASE_PROMPT} Sinulle annetaan keskeneräinen lause joka alkaa`
+            + ' esimerkiksi "Pohjois-Dakotassa on lainvastaista..." ja sinun pitää'
+            + ' keksiä sille hauska mutta uskottavan kuuloinen loppuosa suomeksi.'
+            + ' Vastaa vain loppuosa, lyhyesti, muutamalla sanalla.'
     };
     const VALID_QUESTION_TYPES = Object.keys(AI_PROMPTS);
     const aiRateLimit = new Map();
@@ -426,6 +468,126 @@ export function createApp(db) {
             res.send({ success: true, answer: generatedAnswer });
         } catch {
             res.status(500).send({ success: false, error: 'AI-vastauksen generointi epäonnistui. Yritä uudelleen tai kirjoita oma vastaus.' });
+        }
+    });
+
+    const QUESTION_PROMPTS = {
+        'sana': 'Keksi harvinainen mutta oikea sana (suomenkielinen,'
+            + ' vieraskielinen tai erikoisalan termi) ja sen todellinen'
+            + ' määritelmä. Sanan pitää olla niin harvinainen, ettei'
+            + ' tavallinen ihminen tiedä sen merkitystä.\n\n'
+            + 'Esimerkkejä oikeista pelin korteista:\n'
+            + '- {"question":"Suppendaneum","answer":"Jalkatuki Kristuksen jalkojen alla krusifiksissa."}\n'
+            + '- {"question":"Brocatello","answer":"Monivärinen marmori, jota on käytetty paljon pöytälevyissä 1700-luvulla."}\n'
+            + '- {"question":"Uchiwa","answer":"Siipäviuhka, jossa on maalaus."}\n'
+            + '- {"question":"Dikerofobia","answer":"Epänormaali oikeudenmukaisuuden pelko."}\n'
+            + '- {"question":"Prodrom","answer":"Taudin alkuoireisto ja sen aiheuttamat tuntemukset."}\n\n'
+            + 'Keksi uusi vastaava. Vastaa JSON-muodossa: {"question":"sana","answer":"määritelmä"}',
+        'henkilö': 'Keksi oikea mutta tuntematon historiallinen henkilö ja'
+            + ' lyhyt kuvaus hänestä. Henkilön pitää olla niin tuntematon,'
+            + ' ettei tavallinen ihminen tiedä kuka hän on.\n\n'
+            + 'Esimerkkejä oikeista pelin korteista:\n'
+            + '- {"question":"Floki Rafna","answer":"Ruotsalainen viikinki, joka löysi Islannin."}\n'
+            + '- {"question":"Morgan Robertson","answer":"Kirjailija, joka ennusti Titanicin uppoamisen 14 vuotta ennen sen tapahtumista."}\n'
+            + '- {"question":"George Blaisdell","answer":"Keksi Zippo-sytyttimen."}\n'
+            + '- {"question":"Joanna Pitman","answer":"Historioitsija, joka tutki hiusten historiaa."}\n'
+            + '- {"question":"Christopher L. Sholes","answer":"Ensimmäisen kirjoituskoneen keksijä."}\n'
+            + '- {"question":"Cornelius Swartwout","answer":"Patentoi vahveliraudan."}\n\n'
+            + 'Keksi uusi vastaava. Vastaa JSON-muodossa: {"question":"Etunimi Sukunimi","answer":"lyhyt kuvaus"}',
+        'elokuvakäsikirjoitus': 'Keksi oikea mutta tuntematon elokuva ja'
+            + ' lyhyt kuvaus sen juonesta. Elokuvan pitää olla niin'
+            + ' tuntematon, ettei tavallinen ihminen tiedä sitä.\n\n'
+            + 'Esimerkkejä oikeista pelin korteista:\n'
+            + '- {"question":"Kantokäsiin karvoilla","answer":"Reportteri on maantiessä elintasasta porilaista seutillä."}\n'
+            + '- {"question":"Labyrintti","answer":"Nuori tyttö pelastuaksensa pikkuveljeltään Goblin-kuninkaan hallitsemasta maailmasta."}\n\n'
+            + 'Keksi uusi vastaava. Vastaa JSON-muodossa: {"question":"Elokuvan nimi","answer":"lyhyt juonikuvaus"}',
+        'lyhenne': 'Keksi oikea mutta tuntematon suomalainen lyhenne'
+            + ' (2-5 kirjainta, pisteet kirjainten välissä) ja sen'
+            + ' todellinen merkitys. Lyhenteen pitää olla niin'
+            + ' harvinainen, ettei tavallinen ihminen tiedä sitä.\n\n'
+            + 'Esimerkkejä oikeista pelin korteista:\n'
+            + '- {"question":"H.P.Y.","answer":"Henkivakuutusyhdistys"}\n'
+            + '- {"question":"P.K.Y.","answer":"Poliisikoirayhdistys"}\n'
+            + '- {"question":"E.T.T.Y.","answer":"Elokuvateatterien Työnantajayhdistys"}\n'
+            + '- {"question":"S.L.L.","answer":"Suomen Laulajain Liitto"}\n'
+            + '- {"question":"B.L.Y.","answer":"Betoniteollisuusyhdistys"}\n\n'
+            + 'Keksi uusi vastaava. Vastaa JSON-muodossa: {"question":"X.Y.Z.","answer":"merkitys"}',
+        'laki': 'Keksi oikea mutta absurdilta kuulostava laki jostain'
+            + ' maasta tai osavaltiosta. Muotoile kysymys keskeneräisenä'
+            + ' lauseena joka päättyy kolmeen pisteeseen, ja vastaus on'
+            + ' lauseen loppuosa.\n\n'
+            + 'Esimerkkejä oikeista pelin korteista:\n'
+            + '- {"question":"Pohjois-Dakotassa on lainvastaista nukahtaa...","answer":"saappaat jalassa."}\n'
+            + '- {"question":"Mainessa poliisi ei saa...","answer":"pidättää kuollutta ihmistä."}\n'
+            + '- {"question":"Indianassa on kiellettyä katsoa...","answer":"elokuvaa The Stepford Wives."}\n'
+            + '- {"question":"Wisconsinissa ei saa pelata...","answer":"shakkia julkisella paikalla."}\n'
+            + '- {"question":"Suomessa on kiellettyä myydä...","answer":"humeria."}\n\n'
+            + 'Keksi uusi vastaava. Vastaa JSON-muodossa:'
+            + ' {"question":"keskeneräinen lause...","answer":"loppuosa"}'
+    };
+
+    app.post('/api/ai/generate-question', async (req, res) => {
+        if (!req.player) {
+            res.status(400).send({ success: false, error: 'Not in a game' });
+            return;
+        }
+
+        const masterCheck = await isMaster(req);
+        if (!masterCheck) {
+            res.status(400).send({ success: false, error: 'Only master can generate questions' });
+            return;
+        }
+
+        const client = getOpenAIClient();
+        if (!client) {
+            res.status(400).send({ success: false, error: 'AI generation is not available' });
+            return;
+        }
+
+        const { questionType } = req.body;
+        if (!questionType || !VALID_QUESTION_TYPES.includes(questionType)) {
+            res.status(400).send({ success: false, error: 'Invalid question type' });
+            return;
+        }
+
+        const now = Date.now();
+        const rateKey = `q_${req.player.playerId}`;
+        const lastRequest = aiRateLimit.get(rateKey);
+        if (lastRequest && now - lastRequest < 5000) {
+            res.status(429).send({ success: false, error: 'Odota hetki ennen seuraavaa generointia' });
+            return;
+        }
+        aiRateLimit.set(rateKey, now);
+
+        try {
+            const completion = await client.chat.completions.create({
+                model: 'gpt-4o-mini',
+                messages: [
+                    {
+                        role: 'system',
+                        content: 'Olet Rappakalja-lautapelin kysymysten keksijä.'
+                            + ' Tehtäväsi on keksiä kysymyksiä joihin pelaajat'
+                            + ' keksivät väärennettyjä vastauksia. Vastaa AINA'
+                            + ' validina JSON-objektina, ei muuta tekstiä.'
+                    },
+                    { role: 'user', content: QUESTION_PROMPTS[questionType] }
+                ],
+                max_tokens: 300,
+                temperature: 1.0,
+                response_format: { type: 'json_object' }
+            });
+            const raw = completion.choices[0]?.message?.content?.trim();
+            const parsed = JSON.parse(raw);
+            if (!parsed.question || !parsed.answer) {
+                res.status(500).send({ success: false, error: 'AI did not return a valid question' });
+                return;
+            }
+            res.send({ success: true, question: parsed.question, answer: parsed.answer });
+        } catch {
+            res.status(500).send({
+                success: false,
+                error: 'Kysymyksen generointi epäonnistui. Yritä uudelleen.'
+            });
         }
     });
 

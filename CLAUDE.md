@@ -88,6 +88,7 @@ All endpoints return `{ success: true, ... }` or `{ success: false, error: "..."
 | GET | `/api/health` | — | Health check for Fly.io; returns `{ status: "ok" }` |
 | GET | `/api/ai/status` | — | Check if AI generation is available: `{ available: bool }` |
 | POST | `/api/ai/generate` | player (not master) | Generate AI answer; body: `{ questionType, question }`. Types: `sana`, `henkilö`, `elokuvakäsikirjoitus`, `lyhenne`, `laki`. Rate limited (10s). |
+| POST | `/api/ai/generate-question` | master | Generate question + real answer; body: `{ questionType }`. Returns `{ question, answer }`. Rate limited (5s). |
 
 ## WebSocket Events (server → client)
 
