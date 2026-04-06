@@ -37,18 +37,18 @@ function MasterAnswerForm({ round, onAnswered, prefillAnswer }) {
 
     const submit = () => {
         if (!answer.trim()) {
-            setError('Answer cannot be empty!');
+            setError('Vastaus ei voi olla tyhjä!');
             return;
         }
         api.post('/api/answer', { currentRound: round, answer }).then(() => {
             onAnswered();
-        }).catch(() => setError('Failed to submit answer'));
+        }).catch(() => setError('Vastauksen lähettäminen epäonnistui'));
     };
 
     return (
         <Card>
             <CardHeader>
-                <CardTitle className="text-lg">Your turn to answer first!</CardTitle>
+                <CardTitle className="text-lg">Sinun vuorosi vastata ensin!</CardTitle>
             </CardHeader>
             <CardContent>
                 <div className="space-y-3">
@@ -57,17 +57,17 @@ function MasterAnswerForm({ round, onAnswered, prefillAnswer }) {
                     )}
                     <div>
                         <label htmlFor="masterAnswer" className="mb-1 block text-sm font-medium text-gray-700">
-                            Your answer
+                            Vastauksesi
                         </label>
                         <Textarea
                             id="masterAnswer"
                             rows={3}
                             onChange={ev => setAnswer(ev.target.value)}
                             value={answer}
-                            placeholder="Type your answer..."
+                            placeholder="Kirjoita vastauksesi..."
                         />
                     </div>
-                    <Button onClick={submit} className="w-full">Submit my answer</Button>
+                    <Button onClick={submit} className="w-full">Lähetä vastaus</Button>
                 </div>
             </CardContent>
         </Card>
@@ -78,7 +78,7 @@ function NextMasterPicker({ players, currentPlayerId, onPick }) {
     return (
         <Card>
             <CardHeader>
-                <CardTitle className="text-lg">Choose the next master</CardTitle>
+                <CardTitle className="text-lg">Valitse seuraava pelinjohtaja</CardTitle>
             </CardHeader>
             <CardContent>
                 <div className="flex flex-wrap gap-2">
@@ -88,7 +88,7 @@ function NextMasterPicker({ players, currentPlayerId, onPick }) {
                             variant={p.id === currentPlayerId ? 'outline' : 'default'}
                             onClick={() => onPick(p.id)}
                         >
-                            {p.id === currentPlayerId ? `${p.name} (me)` : p.name}
+                            {p.id === currentPlayerId ? `${p.name} (minä)` : p.name}
                         </Button>
                     ))}
                 </div>
@@ -285,7 +285,7 @@ function Game() {
     };
 
     const endGame = () => {
-        if (confirm('Are you sure you want to end the game?')) {
+        if (confirm('Haluatko varmasti lopettaa pelin?')) {
             api.post('/api/session/del').then(() => navigate('/'));
         }
     };
@@ -301,16 +301,16 @@ function Game() {
                 <CardContent className="flex items-center justify-between pt-4">
                     <div>
                         <div className="flex items-center gap-2">
-                            <span className="text-sm text-gray-500">Room</span>
+                            <span className="text-sm text-gray-500">Huone</span>
                             <Badge className="font-mono text-lg">{gameId}</Badge>
                         </div>
                         <div className="mt-1 flex items-center gap-2">
-                            <span className="text-sm text-gray-500">Round</span>
+                            <span className="text-sm text-gray-500">Kierros</span>
                             <Badge variant="secondary">{serverCurrentRound}</Badge>
                         </div>
                     </div>
                     <div className="text-right">
-                        <p className="text-sm text-gray-500">Players</p>
+                        <p className="text-sm text-gray-500">Pelaajat</p>
                         <div className="mt-1 flex flex-wrap justify-end gap-1">
                             {players.map(p => (
                                 <Badge key={p.id} variant={p.is_master ? 'default' : 'secondary'}>
@@ -334,9 +334,9 @@ function Game() {
             {phase === 'reveal' && !pickingNextMaster && (
                 <div className="space-y-4">
                     <div className="flex flex-wrap gap-2">
-                        <Button variant="outline" onClick={shuffleAnswers}>Shuffle answers</Button>
-                        <Button onClick={nextRound}>Next round</Button>
-                        <Button variant="destructive" onClick={endGame}>End game</Button>
+                        <Button variant="outline" onClick={shuffleAnswers}>Sekoita vastaukset</Button>
+                        <Button onClick={nextRound}>Seuraava kierros</Button>
+                        <Button variant="destructive" onClick={endGame}>Lopeta peli</Button>
                     </div>
                     <div>
                         {answers.map(a => (

@@ -86,14 +86,14 @@ function Answer() {
                     setAnswer('');
                     getSession();
                 })
-                .catch(() => setError('Failed to submit answer'));
+                .catch(() => setError('Vastauksen lähettäminen epäonnistui'));
         } else {
-            setError('The answer is empty!');
+            setError('Vastaus ei voi olla tyhjä!');
         }
     };
 
     const logout = () => {
-        if (confirm('Are you sure you want to leave?')) {
+        if (confirm('Haluatko varmasti poistua?')) {
             api.post('/api/session/del').then(() => navigate('/'));
         }
     };
@@ -102,10 +102,10 @@ function Answer() {
         return (
             <Card>
                 <CardContent className="py-12 text-center">
-                    <p className="text-lg text-gray-600">Waiting for the next round...</p>
-                    <p className="mt-1 text-sm text-gray-400">The master is reviewing answers</p>
+                    <p className="text-lg text-gray-600">Odotetaan seuraavaa kierrosta...</p>
+                    <p className="mt-1 text-sm text-gray-400">Pelinjohtaja käy vastauksia läpi</p>
                     <Button variant="outline" onClick={logout} className="mt-6">
-                        Leave game
+                        Poistu pelistä
                     </Button>
                 </CardContent>
             </Card>
@@ -116,9 +116,9 @@ function Answer() {
         <Card>
             <CardHeader>
                 <CardTitle>
-                    Round {serverCurrentRound}
+                    Kierros {serverCurrentRound}
                 </CardTitle>
-                <p className="text-sm text-gray-500">Playing as <span className="font-semibold">{author}</span></p>
+                <p className="text-sm text-gray-500">Pelaat nimellä <span className="font-semibold">{author}</span></p>
             </CardHeader>
             <CardContent>
                 <div className="space-y-4">
@@ -191,19 +191,19 @@ function Answer() {
                     )}
                     <div>
                         <label htmlFor="answerField" className="mb-1 block text-sm font-medium text-gray-700">
-                            Your answer
+                            Vastauksesi
                         </label>
                         <Textarea
                             id="answerField"
                             rows={3}
                             value={answer}
                             onChange={ev => setAnswer(ev.target.value)}
-                            placeholder="Type your answer..."
+                            placeholder="Kirjoita vastauksesi..."
                         />
                     </div>
                     <div className="flex gap-2">
-                        <Button onClick={sendAnswer} className="flex-1">Send</Button>
-                        <Button variant="outline" onClick={logout}>Leave</Button>
+                        <Button onClick={sendAnswer} className="flex-1">Lähetä</Button>
+                        <Button variant="outline" onClick={logout}>Poistu</Button>
                     </div>
                 </div>
             </CardContent>

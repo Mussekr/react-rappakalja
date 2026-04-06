@@ -452,7 +452,7 @@ export function createApp(db) {
 
         try {
             const completion = await client.chat.completions.create({
-                model: 'gpt-4o-mini',
+                model: 'gpt-5.4-mini',
                 messages: [
                     { role: 'system', content: AI_PROMPTS[questionType] },
                     { role: 'user', content: String(question).trim() }
@@ -561,7 +561,7 @@ export function createApp(db) {
 
         try {
             const completion = await client.chat.completions.create({
-                model: 'gpt-4o-mini',
+                model: 'gpt-5.4-mini',
                 messages: [
                     {
                         role: 'system',
