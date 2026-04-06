@@ -27,9 +27,13 @@ function AnswerCard({ player, answer }) {
     );
 }
 
-function MasterAnswerForm({ round, onAnswered }) {
+function MasterAnswerForm({ round, onAnswered, prefillAnswer }) {
     const [answer, setAnswer] = useState('');
     const [error, setError] = useState('');
+
+    useEffect(() => {
+        if (prefillAnswer) setAnswer(prefillAnswer);
+    }, [prefillAnswer]);
 
     const submit = () => {
         if (!answer.trim()) {
@@ -93,7 +97,7 @@ function NextMasterPicker({ players, currentPlayerId, onPick }) {
     );
 }
 
-function QuestionGenerator() {
+function QuestionGenerator({ onUseAnswer }) {
     const [questionType, setQuestionType] = useState('sana');
     const [generated, setGenerated] = useState(null);
     const [shared, setShared] = useState(false);
@@ -154,8 +158,15 @@ function QuestionGenerator() {
                             </div>
                             <div>
                                 <p className="text-xs font-medium uppercase text-gray-500">Oikea vastaus (vain sinulle)</p>
-                                <div className="mt-1 rounded-md border border-green-200 bg-green-50 p-3 text-sm">
-                                    {generated.answer}
+                                <div className="mt-1 flex items-start gap-2 rounded-md border border-green-200 bg-green-50 p-3">
+                                    <span className="flex-1 text-sm">{generated.answer}</span>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => onUseAnswer(generated.answer)}
+                                    >
+                                        Käytä
+                                    </Button>
                                 </div>
                             </div>
                             <div className="flex gap-2">
@@ -190,6 +201,7 @@ function Game() {
     const [playerId, setPlayerId] = useState(null);
     const [pickingNextMaster, setPickingNextMaster] = useState(false);
     const [aiAvailable, setAiAvailable] = useState(false);
+    const [prefillAnswer, setPrefillAnswer] = useState('');
     const navigate = useNavigate();
     const currentRoundRef = useRef('');
 
@@ -313,8 +325,8 @@ function Game() {
             {/* Master answer phase */}
             {phase === 'answering' && (
                 <>
-                    {aiAvailable && <QuestionGenerator />}
-                    <MasterAnswerForm round={serverCurrentRound} onAnswered={onMasterAnswered} />
+                    {aiAvailable && <QuestionGenerator onUseAnswer={setPrefillAnswer} />}
+                    <MasterAnswerForm round={serverCurrentRound} onAnswered={onMasterAnswered} prefillAnswer={prefillAnswer} />
                 </>
             )}
 
